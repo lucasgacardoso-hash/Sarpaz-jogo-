@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Origens 8x10</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+:root{--bg:#f4f1ea;--fg:#222;--l:#eadfc4;--d:#b9a27a;--p0:#2b6cb0;--p1:#c05621;--card:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1a1f;--fg:#eee;--l:#5a5a66;--d:#3a3a44;--p0:#3b82c4;--p1:#d9772b;--card:#26262e}}
+*{-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px;gap:10px;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+#st{font-weight:600;text-align:center}
+#b{display:grid;grid-template-columns:20px repeat(8,1fr);width:min(98vw,480px);border-radius:8px;overflow:hidden}
+.lb{display:flex;align-items:center;justify-content:center;font-size:12px;opacity:.7;height:20px}
+.lb.r{height:auto}
+.c{aspect-ratio:1;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.c.l{background:var(--l)}.c.k{background:var(--d)}
+.c.wl{background:repeating-linear-gradient(45deg,#4a4a4a 0 6px,#363636 6px 12px)}
+.c.pt0{box-shadow:inset 0 0 0 3px #9f7aea}.c.pt1{box-shadow:inset 0 0 0 3px #38b2ac}
+.pl{font-size:clamp(14px,4.5vw,22px);opacity:.7}
+.c.m::after,.c.cp::after,.c.s::after,.c.b::after,.c.cl::after,.c.t::after{content:"";position:absolute;inset:0;opacity:.5;z-index:2;pointer-events:none}
+.c.m::after{background:#38a169;border-radius:50%;inset:32%}
+.c.cp::after{background:#e53e3e}
+.c.s::after{background:#dd8a00}
+.c.b::after{background:#805ad5}
+.c.cl::after{background:#3182ce;border-radius:50%;inset:25%}
+.c.t::after{background:#ecc94b;border-radius:50%;inset:35%}
+.c.sel{outline:3px solid #ecc94b;outline-offset:-3px}
+.o{position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;z-index:2}
+.pc{width:78%;height:78%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,4.8vw,24px);z-index:1;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.pc.sh{box-shadow:0 0 0 3px #4fd1c5}
+.pc.im{box-shadow:0 0 0 3px gold,0 0 8px 3px gold}
+#cm,#lg,#lobby{width:min(98vw,480px);font-size:13px;background:var(--card);border-radius:8px;padding:8px 10px;box-sizing:border-box}
+#lg{min-height:70px}
+#lobby{display:flex;flex-direction:column;gap:8px;font-size:15px}
+#lobby .row{display:flex;gap:6px}
+input{flex:1;min-width:0;padding:10px;border-radius:8px;border:1px solid var(--d);font-size:16px;text-transform:uppercase;background:var(--bg);color:var(--fg)}
+button{padding:10px 14px;border-radius:8px;border:0;background:var(--p0);color:#fff;font-size:15px}
+button.g{background:#718096}
+details{width:min(98vw,480px);font-size:13px}
+</style></head><body>
+<div id="st"></div>
+<div id="lobby">
+<b>Jogar online (2 jogadores)</b>
+<button onclick="host()">Criar sala</button>
+<div class="row"><input id="code" maxlength="4" placeholder="Código" autocomplete="off"><button onclick="join()">Entrar</button></div>
+<button class="g" onclick="local()">Jogar local (mesmo aparelho)</button>
+<div id="ls"></div>
+</div>
+<div id="b"></div>
+<div id="cm"></div>
+<div id="lg"></div>
+<button onclick="init()">Reiniciar</button>
+<details><summary>Regras</summary>
+<p>Cada turno, move uma peça. Bolinha no canto = casa de origem. Peça morta volta à origem (espera se ocupada); sem origem (clone), morre para sempre.<br>
+⚔️ Soldado: 1 casa, mata ao pisar.<br>
+🎯 Atirador: anda 1 casa ou atira em inimigo a até 2 casas.<br>
+🏃 Corredor: anda até 2 casas.<br>
+⚡ Carrasco: ao matar, joga de novo.<br>
+🛡️ Escudeiro: ao matar ganha escudo (absorve 1 morte). Recuar 1 casa mata quem estiver atrás, até aliado.<br>
+👥 Clonador: toque nele de novo para clonar (gasta a vez; só 1 clone vivo por vez, pode clonar de novo se o clone morrer).<br>
+🏹 Arqueiro: anda 1 casa ou atira flecha em linha reta (sem limite).<br>
+👻 Fantasma: anda até 2 casas atravessando paredes e pode ficar nelas (paredes protegem de golpes corpo a corpo).<br>
+Paredes bloqueiam. 🌀 Portais roxos e verdes levam ao portal par (precisa estar livre).<br>
+Chegar numa origem inimiga: a peça fica imortal e parada (intacta) ali, a peça dona da origem morre para sempre e a sua peça revive na casa de origem dela. Se já houver peça imortal lá (ou ela não tiver origem), você ganha 2 pontos em vez de 1 e não revive. Peças imortais não se movem mais (ainda podem atirar). Vence quem conquistar 5 origens, ou na hora se o Soldado conquistar uma.</p></details>
+<script>
+const W=8,H=10,PRE='origens-';
+const N={S:'Soldado',A:'Atirador',C:'Corredor',R:'Carrasco',E:'Escudeiro',L:'Clonador',B:'Arqueiro',F:'Fantasma',T:'Torreta'};
+const G={S:'⚔️',A:'🎯',C:'🏃',R:'⚡',E:'🛡️',L:'👥',B:'🏹',F:'👻',T:'🗼'};
+const TIP={S:'anda 1 casa e mata ao pisar.',A:'anda 1 casa ou atira em inimigo a até 2 casas.',C:'anda até 2 casas e mata ao pisar.',R:'anda 1 casa; ao matar, joga de novo.',E:'anda 1 casa; ao matar ganha escudo. Recuo mata até aliado.',L:'anda 1 casa; toque nele de novo para clonar.',B:'anda 1 casa ou atira flecha em linha reta (sem limite).',F:'anda até 2 casas atravessando paredes.',T:'fixa; atira em linha reta.'};
+const lay=['C','A','E','F','R','L','B','S'],NM=['Azul','Laranja'];
+const walls=[[2,3],[5,6],[3,4],[4,5],[0,4],[7,5],[6,2],[1,7],[5,3],[2,6]];
+const ports=[[[0,6],[7,3]],[[7,6],[0,3]]];
+const D=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+let P,sel,turn,score,over,legal,log,pend,xt,cmode,me=null,peer=null,conn=null,started=false;
+const $=id=>document.getElementById(id);
+function init(remote){P=[];for(let o=0;o<2;o++)for(let x=0;x<W;x++){const y=o?0:H-1;P.push({o,t:lay[x],ox:x,oy:y,x,y,s:'a',im:false})}
+sel=null;turn=0;score=[0,0];over=false;legal=[];pend=null;xt=false;cmode=false;log=['Azul começa.'];
+if(!remote&&conn&&conn.open)conn.send({t:'rs'});draw()}
+const at=(x,y)=>P.find(p=>p.s=='a'&&p.x==x&&p.y==y);
+const ok=(x,y)=>x>=0&&y>=0&&x<W&&y<H;
+const isW=(x,y)=>walls.some(w=>w[0]==x&&w[1]==y);
+const pi=(x,y)=>ports.findIndex(r=>r.some(c=>c[0]==x&&c[1]==y));
+function portAt(x,y){const i=pi(x,y);if(i<0)return null;const r=ports[i];return r[0][0]==x&&r[0][1]==y?r[1]:r[0]}
+const valid=(x,y)=>ok(x,y)&&!at(x,y)&&!isW(x,y)&&pi(x,y)<0;
+function ray(p,max,r){D.forEach(v=>{for(let i=1;i<=max;i++){const a=p.x+v[0]*i,b=p.y+v[1]*i;if(!ok(a,b))break;const q=at(a,b);
+if(q){if(q.o!=p.o&&!q.im)r.push({x:a,y:b,k:'s'});break}if(isW(a,b))break}})}
+function mv(p){const r=[];
+if(p.t=='T'){ray(p,9,r);return r}
+const gh=p.t=='F',mx=(p.t=='C'||gh)?2:1;
+D.forEach(v=>{for(let i=1;i<=mx;i++){const a=p.x+v[0]*i,b=p.y+v[1]*i;if(!ok(a,b))break;if(isW(a,b)&&!gh)break;const q=at(a,b);
+if(q){if(q.o!=p.o&&!q.im&&p.t!='A')r.push({x:a,y:b,tx:a,ty:b,k:'m',cap:1});break}
+const e=portAt(a,b);if(e){if(!at(e[0],e[1]))r.push({x:a,y:b,tx:e[0],ty:e[1],k:'m'});continue}
+r.push({x:a,y:b,tx:a,ty:b,k:'m'})}});
+if(p.t=='A')P.forEach(q=>{if(q.s=='a'&&q.o!=p.o&&!q.im&&Math.max(Math.abs(q.x-p.x),Math.abs(q.y-p.y))<=2)r.push({x:q.x,y:q.y,k:'s'})});
+if(p.t=='B')ray(p,9,r);
+if(p.t=='E'){const y=p.y+(p.o?-1:1),q=ok(p.x,y)&&!isW(p.x,y)&&at(p.x,y);if(q&&q.o==p.o&&!q.im)r.push({x:p.x,y,tx:p.x,ty:y,k:'b'})}
+return p.im?r.filter(l=>l.k=='s'):r}
+function cl(p){const r=[];if(p.t=='L'&&!p.isClone&&!p.im&&(!p.cl||p.cl.s!='a'))D.forEach(v=>{const a=p.x+v[0],b=p.y+v[1];if(valid(a,b))r.push({x:a,y:b,k:'c'})});return r}
+function kill(q){q.s=q.ox===null?'g':'d';q.x=q.y=null;log.push(NM[q.o]+': '+N[q.t]+' morreu.')}
+function hit(q){if(q.shield){q.shield=false;log.push(NM[q.o]+': escudo do '+N[q.t]+' absorveu o golpe.');return false}kill(q);return true}
+function conquer(p){if(p.y!=(p.o?H-1:0))return;
+const v=P.find(q=>q.o!=p.o&&q.ox==p.x&&q.oy==p.y&&q.s!='g');
+if(v){v.s='g';v.x=v.y=null;p.im=true;score[p.o]++;const ox=p.ox,oy=p.oy,b=ox===null?null:at(ox,oy);
+log.push(NM[p.o]+' conquistou uma origem! '+N[p.t]+' imortal; '+N[v.t]+' inimigo destruído.');
+if(p.t=='S'){score[p.o]=Math.max(5,score[p.o]);log.push(NM[p.o]+': o Soldado conquistou, vitória certa!')}else if(ox===null||(b&&b.im)){score[p.o]++;log.push(NM[p.o]+' ganha 2 pontos (não dá para reviver).')}
+else{p.ox=p.oy=null;P.push({o:p.o,t:p.t,ox,oy,x:null,y:null,s:'d',im:false,cl:p.cl,isClone:p.isClone});log.push(NM[p.o]+': '+N[p.t]+' revive na casa de origem.')}}}
+function respawn(){P.forEach(p=>{if(p.s=='d'&&!at(p.ox,p.oy)){p.s='a';p.x=p.ox;p.y=p.oy;p.shield=false}})}
+function finish(ex){if(score[turn]>=5){over=true;log.push('Fim! '+NM[turn]+' venceu.')}else if(!ex)turn^=1;else log.push(NM[turn]+' joga de novo!');draw()}
+function go(m,remote){const p=sel;if(!remote&&conn&&conn.open)conn.send({t:'a',i:P.indexOf(p),k:m.k,x:m.x,y:m.y});
+let ex=false,mvd=false;
+if(m.k=='c'){const c={o:p.o,t:'L',ox:null,oy:null,x:m.x,y:m.y,s:'a',im:false,isClone:true};P.push(c);p.cl=c;log.push(NM[p.o]+': Clonador criou um clone.')}
+else{const q=at(m.x,m.y);let k=false;
+if(m.k=='s'){if(q)hit(q)}
+else{if(q)k=hit(q);if(!q||k){p.x=m.tx;p.y=m.ty;mvd=true;if(k){if(p.t=='E')p.shield=true;if(p.t=='R')ex=true}}}}
+if(mvd)conquer(p);
+respawn();sel=null;legal=[];cmode=false;
+if(pend!==null){xt=ex;draw();return}
+finish(ex)}
+function placeT(x,y,remote){if(!valid(x,y)||pend===null)return;if(!remote&&conn&&conn.open)conn.send({t:'a',k:'t',x,y});
+P.push({o:pend,t:'T',ox:null,oy:null,x,y,s:'a',im:false});log.push(NM[pend]+' posicionou uma torreta.');pend=null;finish(xt)}
+function clk(x,y){if(over||!started||(me!==null&&turn!=me))return;
+if(pend!==null){placeT(x,y);return}
+const m=legal.find(l=>l.x==x&&l.y==y);if(m){go(m);return}
+const p=at(x,y);
+if(p&&p==sel&&!cmode&&cl(p).length){cmode=true;legal=cl(p);draw();return}
+if(p&&p.o==turn){sel=p;cmode=false;legal=mv(p)}else{sel=null;cmode=false;legal=[]}draw()}
+/* online */
+function wire(){conn.on('open',()=>{started=true;$('lobby').style.display='none';init(true)});
+conn.on('data',d=>{if(d.t=='rs')init(true);else if(d.t=='a'){
+if(d.k=='t'){if(pend!==null&&pend!=me)placeT(d.x,d.y,true)}
+else{const p=P[d.i];if(!p||p.o!=turn||turn==me||pend!==null)return;sel=p;const m=mv(p).concat(cl(p)).find(l=>l.x==d.x&&l.y==d.y&&l.k==d.k);if(m)go(m,true)}}});
+conn.on('close',()=>{log.push('Oponente desconectou.');draw()})}
+function host(){stop();const c=Math.random().toString(36).slice(2,6).toUpperCase();
+$('ls').textContent='Criando sala…';peer=new Peer(PRE+c);me=0;
+peer.on('open',()=>{$('ls').innerHTML='Código da sala: <b style="font-size:22px">'+c+'</b><br>Aguardando o outro jogador…'});
+peer.on('connection',x=>{conn=x;wire()});
+peer.on('error',e=>{$('ls').textContent=e.type=='unavailable-id'?'Código em uso, tente de novo.':'Erro de conexão: '+e.type})}
+function join(){stop();const c=$('code').value.trim().toUpperCase();if(c.length!=4){$('ls').textContent='Digite o código de 4 letras.';return}
+$('ls').textContent='Conectando…';peer=new Peer();me=1;
+peer.on('open',()=>{conn=peer.connect(PRE+c,{reliable:true});wire()});
+peer.on('error',e=>{$('ls').textContent=e.type=='peer-unavailable'?'Sala não encontrada.':'Erro de conexão: '+e.type})}
+function stop(){try{peer&&peer.destroy()}catch(e){}peer=conn=null;me=null}
+function local(){stop();started=true;$('lobby').style.display='none';init(true)}
+function draw(){const f=me===1;let h='<div class="lb"></div>';
+for(let i=0;i<W;i++)h+='<div class="lb">'+'ABCDEFGH'[f?W-1-i:i]+'</div>';
+for(let yy=0;yy<H;yy++){const y=f?H-1-yy:yy;h+='<div class="lb r">'+(H-y)+'</div>';
+for(let xx=0;xx<W;xx++){const x=f?W-1-xx:xx,p=at(x,y),pt=pi(x,y);
+let c='c '+((x+y)%2?'k':'l');if(isW(x,y))c+=' wl';if(pt>=0)c+=' pt'+pt;
+if(pend!==null){if(valid(x,y))c+=' t'}else{const m=legal.find(l=>l.x==x&&l.y==y);if(m)c+=' '+(m.k=='c'?'cl':m.k=='s'?'s':m.k=='b'?'b':m.cap?'cp':'m')}
+if(sel&&sel.x==x&&sel.y==y)c+=' sel';
+h+='<div class="'+c+'" onclick="clk('+x+','+y+')">';
+const ow=P.find(q=>q.ox==x&&q.oy==y&&q.s!='g');if(ow)h+='<i class="o" style="background:var(--p'+ow.o+')"></i>';
+if(pt>=0&&!p)h+='<span class="pl">🌀</span>';
+if(p)h+='<span class="pc'+(p.im?' im':'')+(p.shield?' sh':'')+'" style="background:var(--p'+p.o+')">'+G[p.t]+'</span>';
+h+='</div>'}}
+$('b').innerHTML=h;
+const who=me===null?'':' · Você: '+NM[me],tc='<span style="color:var(--p'+turn+')">'+NM[turn]+'</span>';
+$('st').innerHTML=(over?'Fim de jogo':pend!==null?tc+': toque numa casa vazia para a torreta':'Vez: '+tc+' · Azul '+score[0]+'/5 · Laranja '+score[1]+'/5')+who;
+let cm='';[0,1].forEach(o=>{const d=P.filter(p=>p.o==o&&p.s=='d').map(p=>G[p.t]).join(' '),g=P.filter(p=>p.o==o&&p.s=='g').map(p=>G[p.t]).join(' ');
+cm+='<div><b style="color:var(--p'+o+')">'+NM[o]+'</b> · esperando volta: '+(d||'-')+' · mortas p/ sempre: '+(g||'-')+'</div>'});
+$('cm').innerHTML=cm;
+const info=sel?'<b>'+G[sel.t]+' '+N[sel.t]+'</b>: '+(cmode?'escolha onde criar o clone.':TIP[sel.t]):'Toque numa peça sua para ver as ações.';
+$('lg').innerHTML='<div>'+info+'</div><hr>'+log.slice(-4).map(s=>'<div>'+s+'</div>').join('')}
+init(true);
+</script></body></html>
